@@ -1,0 +1,41 @@
+server:
+  port: 8081
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          keycloak:
+            client-id: calio-server-application
+            client-secret: ZNjj757uYKmmL0myyOvnWUiDeuYlrrNN
+            authorization-grant-type: client_credentials
+#            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            scope: openid, profile, email
+        provider:
+          keycloak:
+            issuer-uri: http://localhost:8080/realms/calio
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/calio
+  datasource:
+    url: jdbc:postgresql://localhost:5432/calio
+    username: postgres
+    password: admin
+  jpa:
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    user: calio_flyway_user
+    password: flyway
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.springframework.security.web.access: DEBUG
+    org.springframework.security.oauth2: DEBUG
+
