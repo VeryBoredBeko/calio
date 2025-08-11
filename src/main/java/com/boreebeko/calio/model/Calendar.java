@@ -15,10 +15,13 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
+@Setter
 public class Calendar implements Persistable<Long> {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "calendars_seq")
+    @SequenceGenerator(name = "calendars_seq", sequenceName = "calendars_id_seq", allocationSize = 1)
+    @Setter(value = AccessLevel.NONE)
     private Long id;
 
     @Column(name = "owner_id")
