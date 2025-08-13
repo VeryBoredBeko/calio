@@ -21,9 +21,8 @@ public class CalendarController {
     }
 
     @GetMapping
-    public ResponseEntity<List<CalendarDTO>> getAllCalendars() {
-        List<CalendarDTO> calendarDTOList = calendarService.getAllCalendars();
-        return new ResponseEntity<>(calendarDTOList, HttpStatus.OK);
+    public ResponseEntity<CalendarDTO> getCalendar() {
+        return new ResponseEntity<>(calendarService.getUserCalendar(), HttpStatus.OK);
     }
 
     @PostMapping

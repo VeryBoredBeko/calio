@@ -10,38 +10,38 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-
 @Service
 @Transactional(readOnly = true)
 public class CalendarService {
 
     private static final Logger logger = LoggerFactory.getLogger(CalendarService.class);
 
-    private final CalendarRepository theCalendarRepository;
-    private final CalendarMapper calendarMapper = CalendarMapper.instance;
+    private final CalendarRepository calendarRepository;
+    private final CalendarMapper calendarMapper;
 
     private final UserService userService;
 
     @Autowired
-    public CalendarService(CalendarRepository calendarRepository, UserService userService) {
-        theCalendarRepository = calendarRepository;
+    public CalendarService(CalendarRepository calendarRepository, CalendarMapper calendarMapper, UserService userService) {
+        this.calendarRepository = calendarRepository;
+        this.calendarMapper = calendarMapper;
         this.userService = userService;
     }
 
     @Transactional
-    public void createNewCalendar(CalendarDTO calendarDTO) {
+    public CalendarDTO createNewCalendar(CalendarDTO calendarDTO) {
 
         Calendar newCalendar = calendarMapper.toEntity(calendarDTO);
         newCalendar.setOwnerId(userService.getCurrentUserUUID());
 
-        logger.debug("Starting operation to create a new calendar for user with id {}", userService.getCurrentUserUUID());
+        logger.debug("Creating a new calendar for user with id {}", userService.getCurrentUserUUID());
+        Calendar persistedCalendar = calendarRepository.save(newCalendar);
 
-        theCalendarRepository.save(newCalendar);
+        return calendarMapper.toDTO(persistedCalendar);
     }
 
-    public List<CalendarDTO> getAllCalendars() {
-        logger.debug("Starting operation to fetch all user-related calendars for user with id {}", userService.getCurrentUserUUID());
-        return calendarMapper.toDTOList(theCalendarRepository.findCalendarsByOwnerId(userService.getCurrentUserUUID()));
+    public CalendarDTO getUserCalendar() {
+        logger.debug("Fetching calendat for user with id {}", userService.getCurrentUserUUID());
+        return calendarMapper.toDTO(calendarRepository.findCalendarsByOwnerId(userService.getCurrentUserUUID()));
     }
 }
