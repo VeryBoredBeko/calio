@@ -2,9 +2,7 @@ package com.boreebeko.calio.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.validator.constraints.Length;
 import org.springframework.data.domain.Persistable;
 
@@ -15,11 +13,14 @@ import java.time.OffsetDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
+@Setter
 public class Event implements Persistable<Long> {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
-    @Column(insertable = false)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "events_seq")
+    @SequenceGenerator(name = "events_seq", sequenceName = "events_id_seq", allocationSize = 1)
+    @Column(insertable = false, updatable = false)
+    @Setter(value = AccessLevel.PROTECTED)
     private Long id;
 
     @JoinColumn(name = "calendar_id")
@@ -50,6 +51,7 @@ public class Event implements Persistable<Long> {
     private String recurrenceRule;
 
     @Column(name = "created_at")
+    @Setter(value = AccessLevel.PROTECTED)
     private OffsetDateTime createdAt;
 
     @Override

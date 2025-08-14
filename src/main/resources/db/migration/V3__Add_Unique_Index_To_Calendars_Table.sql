@@ -1,0 +1,1 @@
+ALTER TABLE calendars ADD CONSTRAINT calendars_owner_id_key UNIQUE (owner_id);
