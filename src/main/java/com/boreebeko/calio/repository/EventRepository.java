@@ -21,4 +21,11 @@ public interface EventRepository extends ListCrudRepository<Event, Long> {
         WHERE e.id = :eventId
         """)
     Optional<EventWithSimpleCalendarProjection> findEventProjectionById(Long eventId);
+
+    @Query("""
+            SELECT e
+            FROM Event e
+            WHERE e.id = :eventId
+            """)
+    Optional<Event> findEventByEventId(Long eventId);
 }
