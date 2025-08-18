@@ -29,6 +29,7 @@ public class EventController {
         return new ResponseEntity<>(eventService.getAllEvents(), HttpStatus.OK);
     }
 
+    // TODO: Controller must be responsible only for handling and returning requests and responses
     @PostMapping
     public ResponseEntity<EventDTO> createNewEvent(@PathVariable Long calendarId,
                                                    @RequestBody EventDTO eventDTO,
