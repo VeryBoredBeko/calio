@@ -47,6 +47,18 @@ spring:
           class: org.springframework.scheduling.quartz.LocalDataSourceJobStore
           driverDelegateClass: org.quartz.impl.jdbcjobstore.PostgreSQLDelegate
           tablePrefix: QRTZ_
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${JAVA_MAIL_SENDER_USERNAME}
+    password: ${JAVA_MAIL_SENDER_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
 
 logging:
   level:

@@ -3,7 +3,7 @@ package com.boreebeko.calio.service.impl;
 import com.boreebeko.calio.dto.ReminderDTO;
 import com.boreebeko.calio.exception.NoSuchCalendarEntityException;
 import com.boreebeko.calio.exception.NoSuchEventEntityException;
-import com.boreebeko.calio.job.ConsoleNotificationJob;
+import com.boreebeko.calio.job.EmailReminderJob;
 import com.boreebeko.calio.model.Event;
 import com.boreebeko.calio.model.Reminder;
 import com.boreebeko.calio.model.projection.CalendarIdOwnerIdProjection;
@@ -73,11 +73,14 @@ public class ReminderServiceImpl implements ReminderService {
 
         Reminder persistedReminder = reminderRepository.save(newReminder);
 
-        JobDetail jobDetail = JobBuilder.newJob(ConsoleNotificationJob.class)
+        JobDetail jobDetail = JobBuilder.newJob(EmailReminderJob.class)
                 .withIdentity("remindJob-" + persistedReminder.getId(), "test")
                 .usingJobData("reminderId", persistedReminder.getId())
                 .usingJobData("method", persistedReminder.getReminderMethod().toString())
                 .usingJobData("userId", userService.getCurrentUserUUID().toString())
+                .usingJobData("email", userService.getCurrentUserEmail())
+                .usingJobData("subject", "Reminding about upcoming meeting")
+                .usingJobData("text", "You have meeting in one hour")
                 .build();
 
         Trigger trigger = TriggerBuilder.newTrigger()
@@ -87,7 +90,6 @@ public class ReminderServiceImpl implements ReminderService {
                 .build();
 
         scheduler.scheduleJob(jobDetail, trigger);
-
         return reminderMapper.toDTO(persistedReminder);
     }
 
