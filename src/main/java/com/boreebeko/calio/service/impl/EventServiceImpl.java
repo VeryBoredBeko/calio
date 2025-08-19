@@ -1,7 +1,6 @@
 package com.boreebeko.calio.service.impl;
 
 import com.boreebeko.calio.dto.EventDTO;
-import com.boreebeko.calio.exception.InvalidEventTimingeException;
 import com.boreebeko.calio.exception.NoSuchEventEntityException;
 import com.boreebeko.calio.model.Calendar;
 import com.boreebeko.calio.model.Event;
@@ -17,7 +16,6 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -44,10 +42,6 @@ public class EventServiceImpl implements EventService {
     public EventDTO createNewEvent(EventDTO eventDTO) {
 
         Event newEvent = eventMapper.toEntity(eventDTO);
-
-        if (newEvent.getStartTime().isBefore(OffsetDateTime.now()) || newEvent.getEndTime().isBefore(newEvent.getStartTime())) {
-            throw new InvalidEventTimingeException("Event has invalid timing");
-        }
 
         Calendar userCalendar =
                 calendarRepository.findCalendarsByOwnerId(userService.getCurrentUserUUID());
