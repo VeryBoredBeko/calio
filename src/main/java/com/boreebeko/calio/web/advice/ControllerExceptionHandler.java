@@ -1,5 +1,6 @@
 package com.boreebeko.calio.web.advice;
 
+import com.boreebeko.calio.exception.InvalidEventTimingeException;
 import com.boreebeko.calio.exception.NoSuchEventEntityException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +18,11 @@ public class ControllerExceptionHandler {
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<String> handleAccessDeniedException(AccessDeniedException exception) {
+        return new ResponseEntity<>(exception.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(InvalidEventTimingeException.class)
+    public ResponseEntity<String> handleInvalidEventTiming(InvalidEventTimingeException exception) {
         return new ResponseEntity<>(exception.getMessage(), HttpStatus.BAD_REQUEST);
     }
 }
