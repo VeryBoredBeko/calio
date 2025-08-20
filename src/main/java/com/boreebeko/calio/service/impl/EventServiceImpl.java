@@ -1,14 +1,17 @@
 package com.boreebeko.calio.service.impl;
 
 import com.boreebeko.calio.dto.EventDTO;
+import com.boreebeko.calio.dto.ReminderDTO;
 import com.boreebeko.calio.exception.NoSuchEventEntityException;
 import com.boreebeko.calio.model.Calendar;
 import com.boreebeko.calio.model.Event;
+import com.boreebeko.calio.model.ReminderMethod;
 import com.boreebeko.calio.model.projection.CalendarIdProjection;
 import com.boreebeko.calio.model.projection.EventWithSimpleCalendarProjection;
 import com.boreebeko.calio.repository.CalendarRepository;
 import com.boreebeko.calio.repository.EventRepository;
 import com.boreebeko.calio.service.EventService;
+import com.boreebeko.calio.service.ReminderService;
 import com.boreebeko.calio.service.UserService;
 import com.boreebeko.calio.service.mapper.EventMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,17 +32,20 @@ public class EventServiceImpl implements EventService {
     private final UserService userService;
     private final CalendarRepository calendarRepository;
 
+    private final ReminderService reminderService;
+
     @Autowired
-    public EventServiceImpl(EventRepository eventRepository, EventMapper eventMapper, UserService userService, CalendarRepository calendarRepository) {
+    public EventServiceImpl(EventRepository eventRepository, EventMapper eventMapper, UserService userService, CalendarRepository calendarRepository, ReminderService reminderService) {
         this.eventRepository = eventRepository;
         this.eventMapper = eventMapper;
         this.userService = userService;
         this.calendarRepository = calendarRepository;
+        this.reminderService = reminderService;
     }
 
     @Override
     @Transactional
-    public EventDTO createNewEvent(EventDTO eventDTO) {
+    public EventDTO createNewEvent(EventDTO eventDTO, boolean scheduleReminder, ReminderMethod reminderMethod) {
 
         Event newEvent = eventMapper.toEntity(eventDTO);
 
@@ -49,6 +55,13 @@ public class EventServiceImpl implements EventService {
         newEvent.setCalendar(userCalendar);
 
         Event persistedEvent = eventRepository.save(newEvent);
+
+        if (scheduleReminder) {
+            reminderService.createReminder(userCalendar.getId(), persistedEvent.getId(), new ReminderDTO(
+                    persistedEvent.getStartTime().minusHours(1L), reminderMethod
+            ));
+        }
+
         return eventMapper.toDTO(persistedEvent);
     }
 
@@ -75,6 +88,7 @@ public class EventServiceImpl implements EventService {
         if (!persistedEvent.getCalendar().getOwnerId().equals(userId))
             throw new AccessDeniedException("User hasn't enough authority to delete event");
 
+        reminderService.deleteReminderByEventId(eventId);
         eventRepository.deleteById(eventId);
     }
 }

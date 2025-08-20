@@ -3,25 +3,21 @@ package com.boreebeko.calio.service.impl;
 import com.boreebeko.calio.dto.ReminderDTO;
 import com.boreebeko.calio.exception.NoSuchCalendarEntityException;
 import com.boreebeko.calio.exception.NoSuchEventEntityException;
-import com.boreebeko.calio.job.EmailReminderJob;
+import com.boreebeko.calio.exception.NoSuchReminderEntityException;
 import com.boreebeko.calio.model.Event;
 import com.boreebeko.calio.model.Reminder;
 import com.boreebeko.calio.model.projection.CalendarIdOwnerIdProjection;
 import com.boreebeko.calio.repository.CalendarRepository;
 import com.boreebeko.calio.repository.EventRepository;
 import com.boreebeko.calio.repository.ReminderRepository;
-import com.boreebeko.calio.service.EventService;
 import com.boreebeko.calio.service.ReminderService;
 import com.boreebeko.calio.service.UserService;
 import com.boreebeko.calio.service.mapper.ReminderMapper;
-import org.quartz.*;
+import com.boreebeko.calio.service.scheduler.SchedulerFacade;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.ZoneId;
-import java.util.Date;
 
 @Service
 @Transactional(readOnly = true)
@@ -32,29 +28,28 @@ public class ReminderServiceImpl implements ReminderService {
     private final EventRepository eventRepository;
     private final CalendarRepository calendarRepository;
     private final UserService userService;
-    private final EventService eventService;
 
-    private final Scheduler scheduler;
+    private final SchedulerFacade scheduler;
 
     @Autowired
     public ReminderServiceImpl(ReminderMapper reminderMapper,
                                ReminderRepository reminderRepository,
                                EventRepository eventRepository,
                                CalendarRepository calendarRepository,
-                               UserService userService, EventService eventService, Scheduler scheduler) {
+                               UserService userService,
+                               SchedulerFacade scheduler) {
 
         this.reminderMapper = reminderMapper;
         this.reminderRepository = reminderRepository;
         this.eventRepository = eventRepository;
         this.calendarRepository = calendarRepository;
         this.userService = userService;
-        this.eventService = eventService;
         this.scheduler = scheduler;
     }
 
     @Override
     @Transactional
-    public ReminderDTO createReminder(Long calendarId, Long eventId, ReminderDTO reminderDTO) throws SchedulerException {
+    public ReminderDTO createReminder(Long calendarId, Long eventId, ReminderDTO reminderDTO) {
 
         CalendarIdOwnerIdProjection calendarProjection =
                 calendarRepository
@@ -72,30 +67,19 @@ public class ReminderServiceImpl implements ReminderService {
         newReminder.setEvent(existingEvent);
 
         Reminder persistedReminder = reminderRepository.save(newReminder);
+        scheduler.scheduleJob(persistedReminder);
 
-        JobDetail jobDetail = JobBuilder.newJob(EmailReminderJob.class)
-                .withIdentity("remindJob-" + persistedReminder.getId(), "test")
-                .usingJobData("reminderId", persistedReminder.getId())
-                .usingJobData("method", persistedReminder.getReminderMethod().toString())
-                .usingJobData("userId", userService.getCurrentUserUUID().toString())
-                .usingJobData("email", userService.getCurrentUserEmail())
-                .usingJobData("subject", "Reminding about upcoming meeting")
-                .usingJobData("text", "You have meeting in one hour")
-                .build();
-
-        Trigger trigger = TriggerBuilder.newTrigger()
-                .withIdentity("remindTrigger-" + persistedReminder.getId(), "test")
-                .startAt(Date.from(persistedReminder.getRemindAt().atZoneSameInstant(ZoneId.systemDefault()).toInstant()))
-                .withSchedule(SimpleScheduleBuilder.simpleSchedule())
-                .build();
-
-        scheduler.scheduleJob(jobDetail, trigger);
         return reminderMapper.toDTO(persistedReminder);
     }
 
     @Override
     @Transactional
-    public void deleteReminder(Long eventId) {
+    public void deleteReminderByEventId(Long eventId) {
+        Reminder scheduledReminder = reminderRepository
+                .findReminderByEventId(eventId)
+                .orElseThrow(() -> new NoSuchReminderEntityException("There is no reminder entity associated with event with ID " + eventId));
 
+        scheduler.unscheduleJob(scheduledReminder);
+        reminderRepository.delete(scheduledReminder);
     }
 }

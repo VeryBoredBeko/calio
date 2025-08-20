@@ -40,6 +40,9 @@ public class EventServiceImplTests {
     private UserService mockUserService;
 
     @Mock
+    private ReminderService mockReminderService;
+
+    @Mock
     private CalendarRepository mockCalendarRepository;
 
     @InjectMocks
@@ -129,7 +132,7 @@ public class EventServiceImplTests {
         when(mockEventRepository.save(any(Event.class))).thenReturn(eventEntity);
         when(mockEventMapper.toDTO(any(Event.class))).thenReturn(eventDTO);
 
-        EventDTO returnedEventDTO = eventService.createNewEvent(eventDTO);
+        EventDTO returnedEventDTO = eventService.createNewEvent(eventDTO, false, null);
 
         assertThat(returnedEventDTO.getId()).isEqualTo(eventDTO.getId());
         assertThat(returnedEventDTO.getTitle()).isEqualTo(eventDTO.getTitle());
@@ -178,6 +181,7 @@ public class EventServiceImplTests {
         when(mockEventRepository.findEventProjectionById(eventId))
                 .thenReturn(validProjectionOptional);
         doNothing().when(mockEventRepository).deleteById(eventId);
+        doNothing().when(mockReminderService).deleteReminderByEventId(eventId);
 
         eventService.deleteEvent(eventId);
         verify(mockEventRepository).deleteById(eventId);
